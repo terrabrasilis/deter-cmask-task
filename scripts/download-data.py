@@ -5,12 +5,6 @@ Download CMASK geotifs for DETER monthly mosaics
 
 Copyright 2023 TerraBrasilis
 
-Usage:
-  download-data.py
-
-Options:
-  no have
-
 Notes about code.
 
 Created on Thu Oct 22 14:06:43 2020
@@ -22,7 +16,6 @@ Created on Thu Oct 22 14:06:43 2020
 
 import requests
 import psycopg2
-import urllib.request
 from bs4 import BeautifulSoup
 import re
 import os
@@ -30,22 +23,35 @@ from datetime import datetime
 
 class DownloadCMASK:
   """
-    Define configurations on instantiate.
+  Using scraping techniques to locate and download the CMASK files related to the satellite scenes used to
+  detect disturbances in the natural vegetation cover of the Amazon and Cerrado biomes, from the DETER project.
 
-    First parameter: user, The user name used to authentication on the server.
-
-    Second parameter: password, The password value used to authentication on the server.
-    
-    To change the predefined settings, inside the constructor, edit the
-    parameter values in accordance with the respective notes.
-    """
+  The period is the last month based on the current calendar month when the script is run.
+  """
 
   def __init__(self, dir=None, url=None):
     """
     Constructor with predefined settings.
 
-    The start date and end date are automatically detected using the machine's calendar
-    and represent the first and last day of the past month.
+    Optional parameters:
+    -----------------------------
+    :param:dir: The base directory for writing downloaded data.
+    :param:url: The base URL of download page service.
+
+    To define configurations on instantiate, use the environment variables with sensitive data and other settings.
+
+    Mandatory parameters (via env vars):
+    ------------------------------
+    :env:TARGET_BIOME: The name of the biome. Accepted values are: amazonia or cerrado
+    :env:PGHOST: The host name or IP to connect to database
+    :env:PGUSER: The user name to connect to database
+    :env:PGPASSWORD: The password to connect to database
+    :env:PGDB: The database name to connect to
+
+    Optional parameters (via env vars):
+    -----------------------------
+    :env:PGPORT: The port number to connect to database (default is 5432)
+
     """
     # Data directory for writing downloaded data
     self.DIR=dir if dir else os.path.realpath(os.path.join(os.path.dirname(__file__),"../data/"))
@@ -59,12 +65,12 @@ class DownloadCMASK:
     # database params
     self.host=os.getenv("PGHOST", 'host')
     self.database=os.getenv("PGDB", 'database')
-    self.port=os.getenv("PGPORT", 'port')
+    self.port=os.getenv("PGPORT", '5432')
     self.user=os.getenv("PGUSER", 'user')
     self.password=os.getenv("PGPASSWORD", 'password')
     #
     # the current biome name
-    self.BIOME=os.getenv("TARGET_BIOME", 'biome_test')
+    self.BIOME=os.getenv("TARGET_BIOME", 'amazonia')
 
     # year and month to compose the URL used to download cmask
     self.YEAR_MONTH,self.PUBLISH_MONTH=self.__getCurrentYearMonth()
@@ -76,7 +82,7 @@ class DownloadCMASK:
     os.makedirs(self.DATA_DIR, exist_ok=True)
     # try read previous month from control file
     self.PREVIOUS_MONTH=self.__getPreviousMonthFromMetadata()
-    # define connection with db based in biome
+
     if self.BIOME == "amazonia":
       self.deter_table = "public.deter_current_cmr"
       self.path_row = "substring(path_row,0,4) ||'_'|| substring(path_row,4) as path_row"
@@ -85,7 +91,8 @@ class DownloadCMASK:
       self.deter_table = "public.deter_all_geoserver"
       self.path_row = "path_row"
 
-    self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database,user=self.user, password=self.password)
+    # define connection with db based in biome
+    self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
 
   def __buildQuery(self, satellite):
 
@@ -190,7 +197,7 @@ class DownloadCMASK:
     content_parsed = BeautifulSoup(page.content, 'html.parser')
     # Selecting all of the anchors with titles
     links = content_parsed.select("a")
-    # Keep only the first 100 anchors
+    # ignore the first 5 anchors, that is control headers of page
     anchors = links[5:len(links)-1]
     pattern="/"
     for anchor in anchors:
