@@ -19,18 +19,18 @@ BIOMES=("cerrado" "amazonia")
 for TARGET_BIOME in ${BIOMES[@]}
 do
     # the log file for each biome
-    LOG_FILE=${DATA_DIR}/${TARGET_BIOME}_cmaks_${DATE_LOG}.log
+    LOG_FILE=${TARGET_BIOME}_cmaks_${DATE_LOG}.log
     # load postgres parameters from config file in config/pgconfig
-    . ./dbconf.sh "${TARGET_BIOME}" >> ${LOG_FILE}
+    . ./dbconf.sh "${TARGET_BIOME}" >> ${DATA_DIR}/${LOG_FILE}
     #
     # to read inside python
     export TARGET_BIOME=${TARGET_BIOME}
     # get cmask files scraping download page
-    python3 download-data.py >> "download_${LOG_FILE}"
+    python3 download-data.py >> "${DATA_DIR}/download_${LOG_FILE}"
     #
     # using gdal to extract non cloud pixels (number 127) from cmask files
-    . ./process-cloud.sh "${TARGET_BIOME}" >> "gdal_${LOG_FILE}"
+    . ./process-cloud.sh "${TARGET_BIOME}" >> "${DATA_DIR}/gdal_${LOG_FILE}"
     #
     # build cloud cover by municipalities using cmask files
-    python3 zonal-cloud.py >> "zonal_${LOG_FILE}"
+    python3 zonal-cloud.py >> "${DATA_DIR}/zonal_${LOG_FILE}"
 done
