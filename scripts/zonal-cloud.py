@@ -13,7 +13,7 @@ Created on Mon Jan 30 14:02:30 2023
 @mainteiner: Andre Carvalho
 """
 
-from psycopg2 import connect
+import psycopg2
 import rasterio
 import geopandas as gpd
 import pandas as pd
@@ -70,20 +70,19 @@ class ZonalCloud:
     def __configForBiome(self):
         # define the base directory to store downloaded data
         self.DATA_DIR="{0}/{1}".format(self.DIR,self.BIOME)
-        # try read previous month from control file
-        self.PREVIOUS_MONTH=self.__getPreviousMonthFromMetadata()
+        # try read year and month from control file related of the last downloaded files
+        self.YEAR, self.MONTH=self.__getPreviousMonthFromMetadata()
         # the table name when we get the vectors (zones) and store the results
         self.zonal_table = "cloud.monthly_cloud_mun_table"
         # define connection with db based in biome
-        self.connection_string=f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
-        self.con = connect(self.connection_string)
+        self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
         self.con.cursor().execute("SET application_name = 'ETL - DETER CMask Task';")
 
     def __getPreviousMonthFromMetadata(self):
         """
         Read previous month from download control file
         """
-        pm=None
+        year=month=None
         output_file="{0}/acquisition_data_control".format(self.DATA_DIR)
         if os.path.exists(output_file):
             with open(output_file) as f:
@@ -93,8 +92,9 @@ class ZonalCloud:
                         pm=line.split("=")[1]
                         pm=pm.strip()
                         pm=pm.strip('"')
-                        pm=datetime.strptime(str(pm),'%Y-%m-%d').strftime('%Y%m')
-        return pm
+                        year=datetime.strptime(str(pm),'%Y-%m-%d').strftime('%Y')
+                        month=datetime.strptime(str(pm),'%Y-%m-%d').strftime('%m')
+        return year,month
 
     def __getZonalAreas(self):
         """
@@ -123,7 +123,7 @@ class ZonalCloud:
         """
         noncloud_data=pixel_area=None
 
-        filename="{0}/noncloud_{1}_64.tif".format(self.DATA_DIR, self.PREVIOUS_MONTH)
+        filename="{0}/noncloud_{1}{2}_64.tif".format(self.DATA_DIR, self.YEAR, self.MONTH)
         if os.path.exists(filename):
             noncloud_data = rasterio.open(filename)
             pixelSizeX, pixelSizeY  = noncloud_data.res
@@ -135,7 +135,7 @@ class ZonalCloud:
 
     def __storeDataOnTableCloud(self, cloud_area_by_mun, cod_ibge):
 
-        query  = f"UPDATE {self.zonal_table} SET month_cloud_km2 = {str(cloud_area_by_mun)} WHERE cod_ibge = '{str(cod_ibge)}';"
+        query  = f"UPDATE {self.zonal_table} SET month_cloud_km2 = {str(cloud_area_by_mun)}, year={int(self.YEAR)}, month={int(self.MONTH)} WHERE cod_ibge = '{str(cod_ibge)}';"
         cur = self.con.cursor()
         cur.execute(query)
         self.con.commit()
