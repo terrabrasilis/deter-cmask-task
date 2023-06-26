@@ -22,7 +22,7 @@ RUN apt-get -o Acquire::ForceIPv4=true update \
     cron \
     python3-pip \
     postgis \
-    zip \
+    gdal-bin \
     && rm -rf /var/lib/apt/lists/*
 
 # define the timezone to run cron
@@ -38,13 +38,15 @@ ENV SCRIPT_DIR $INSTALL_PATH/scripts-shell
 RUN mkdir -p ${SHARED_DIR} \
     && mkdir -p ${SCRIPT_DIR}
 
+# install python requirements
+ADD env-scripts/requirements.txt $INSTALL_PATH/
+RUN pip3 install -r $INSTALL_PATH/requirements.txt
+
 # Install environment scripts
 # ------------------------------------------------------
 ADD env-scripts/exec_daily.sh $INSTALL_PATH/
 ADD env-scripts/daily.cron /etc/cron.d/daily-cron
 ADD env-scripts/docker-entrypoint.sh $INSTALL_PATH/bin/docker-entrypoint.sh
-ADD env-scripts/requirements.txt $INSTALL_PATH/
-RUN pip3 install -r $INSTALL_PATH/requirements.txt
 
 # Install main scripts
 # ------------------------------------------------------
