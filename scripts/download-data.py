@@ -71,6 +71,9 @@ class DownloadCMASK:
     #
     # the current biome name
     self.BIOME=os.getenv("TARGET_BIOME", 'amazonia')
+    #
+    # used to force one specific year_month to download
+    self.FORCE_YEAR_MONTH=os.getenv("FORCE_YEAR_MONTH", 'no')
 
     # year and month to compose the URL used to download cmask
     self.YEAR_MONTH,self.PUBLISH_MONTH=self.__getCurrentYearMonth()
@@ -83,24 +86,17 @@ class DownloadCMASK:
     # try read previous month from control file
     self.PREVIOUS_MONTH=self.__getPreviousMonthFromMetadata()
 
-    if self.BIOME == "amazonia":
-      self.deter_table = "public.deter_current_cmr"
-      self.path_row = "substring(path_row,0,4) ||'_'|| substring(path_row,4) as path_row"
-      
-    if self.BIOME == "cerrado":
-      self.deter_table = "public.deter_all_geoserver"
-      self.path_row = "path_row"
-
     # define connection with db based in biome
     self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
 
   def __buildQuery(self, satellite):
 
     satellite = satellite.replace('_', '-')
+    max_year_month = f"(SELECT MAX(publish_month) FROM cloud.deter_current)" if self.FORCE_YEAR_MONTH=='no' else f"'{self.FORCE_YEAR_MONTH}'::date"
 
-    SQL=f"SELECT satellite, {self.path_row}, view_date"
-    SQL=f"{SQL} FROM {self.deter_table}"
-    SQL=f"{SQL} WHERE publish_month=(SELECT MAX(publish_month) FROM {self.deter_table})"
+    SQL=f"SELECT satellite, path_row, view_date"
+    SQL=f"{SQL} FROM cloud.deter_current"
+    SQL=f"{SQL} WHERE publish_month={max_year_month}"
     SQL=f"{SQL} AND satellite='{satellite}'"
     SQL=f"{SQL} GROUP BY satellite, path_row, view_date order by view_date ASC"
     
@@ -116,7 +112,7 @@ class DownloadCMASK:
     # if no have previous month, so, continue
     forward=True
 
-    if self.PREVIOUS_MONTH:
+    if self.FORCE_YEAR_MONTH=='no' and self.PREVIOUS_MONTH:
       prev_month=datetime.strptime(str(self.PREVIOUS_MONTH),'%Y-%m-%d').date()
       current_month=datetime.today().date()
       mm=current_month.month if current_month.year > prev_month.year else current_month.month+12
@@ -129,8 +125,14 @@ class DownloadCMASK:
     """
     Define the current year and month reference used to download cmask data
     """
-    publish_month=datetime.today().strftime('%Y-%m-01')
-    year_month=datetime.today().strftime('%Y_%m')
+    publish_month=year_month=None
+
+    if self.FORCE_YEAR_MONTH=='no':
+      publish_month=datetime.today().strftime('%Y-%m-01') # to write on control file
+      year_month=datetime.today().strftime('%Y_%m')
+    else:
+      publish_month=self.FORCE_YEAR_MONTH
+      year_month=datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d').strftime('%Y_%m')
 
     return year_month, publish_month
 
@@ -148,7 +150,7 @@ class DownloadCMASK:
         resultset = cur.fetchall()
 
         for a_field in resultset:
-          satellite = a_field[0]
+          satellite = a_field[0] # from database
           path_row =  str(a_field[1])
           view_date = str(a_field[2])
           ano_mes_dia = view_date.replace('-', '_')
@@ -157,9 +159,9 @@ class DownloadCMASK:
           
           aux = satellite.split("-")
           satellite = aux[0] + "_" +aux[1]
+          pasta = aux[0] + aux[1]
           
           sensor = "AWFI"
-          pasta = satellite.replace('_', '')
           formato = "DRD"
           projecao = "UTM"
           
@@ -233,6 +235,7 @@ class DownloadCMASK:
     Write download control file with date and number of files matched to use on next acquisition process
     """
     output_file="{0}/acquisition_data_control".format(self.DATA_DIR)
+    # if the file already exists, truncate before write
     with open(output_file, 'w') as f:
       f.write("PREVIOUS_MONTH=\"{0}\"\n".format(self.PUBLISH_MONTH))
       f.write("found_items={0}".format(self.found_items))
