@@ -6,6 +6,8 @@ services:
     image: 'terrabrasilis/deter-cmask-data-task:v1.0.0'
     container_name: cmask-data-task
     restart: always
+    environment:
+      - "FORCE_YEAR_MONTH=2023-05-01"
     volumes:
       - '/dockerdata/deter-cmask-data-task/data:/usr/local/data'
     networks:
