@@ -113,11 +113,10 @@ class DownloadCMASK:
     forward=True
 
     if self.FORCE_YEAR_MONTH=='no' and self.PREVIOUS_MONTH:
-      prev_month=datetime.strptime(str(self.PREVIOUS_MONTH),'%Y-%m-%d').date()
-      current_month=datetime.today().date()
-      mm=current_month.month if current_month.year > prev_month.year else current_month.month+12
-      if mm - prev_month.month != 2:
-        forward=False
+      previous_date=datetime.strptime(str(self.PREVIOUS_MONTH),'%Y-%m-%d').date()
+      current_date=datetime.today().date()
+      mm=current_date.month if current_date.year==previous_date.year else current_date.month+12
+      forward=bool(mm-previous_date.month==2)
 
     return forward
   
