@@ -33,4 +33,7 @@ do
     #
     # build cloud cover by municipalities using cmask files
     python3 zonal-cloud.py >> "${DATA_DIR}/zonal_${LOG_FILE}"
+    #
+    # Adding cloud cover data to the final accumulation table
+    . ./insert-final-cloud-cover.sh >> "${DATA_DIR}/insert_${LOG_FILE}"
 done
