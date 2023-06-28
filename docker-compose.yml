@@ -8,6 +8,7 @@ services:
     restart: always
     environment:
       - "FORCE_YEAR_MONTH=2023-05-01"
+      - "EVERY_DAY=yes"
     volumes:
       - '/dockerdata/deter-cmask-data-task/data:/usr/local/data'
     networks:

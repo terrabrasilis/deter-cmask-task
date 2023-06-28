@@ -4,6 +4,7 @@ source /etc/environment
 echo "======================================"
 echo $(date)
 echo "======================================"
-echo "Using force year month from env var"
+echo "State of env vars"
 echo "FORCE_YEAR_MONTH=${FORCE_YEAR_MONTH}"
+echo "EVERY_DAY=${EVERY_DAY}"
 echo "======================================"

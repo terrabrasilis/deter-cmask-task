@@ -74,6 +74,9 @@ class DownloadCMASK:
     #
     # used to force one specific year_month to download
     self.FORCE_YEAR_MONTH=os.getenv("FORCE_YEAR_MONTH", 'no')
+    #
+    # used to skip checking the last closed month and runs every day
+    self.EVERY_DAY=os.getenv("EVERY_DAY", 'no')
 
     # year and month to compose the URL used to download cmask
     self.YEAR_MONTH,self.PUBLISH_MONTH=self.__getCurrentYearMonth()
@@ -109,10 +112,10 @@ class DownloadCMASK:
     Get the previous month reference based in the previous date from download control file and
     make difference with the current month. If the result is 2, so we have the last closed month.
     """
-    # if no have previous month, so, continue
+    # if no have previous month, or bypass check is enable, so continue
     forward=True
 
-    if self.FORCE_YEAR_MONTH=='no' and self.PREVIOUS_MONTH:
+    if self.EVERY_DAY=='no' and self.FORCE_YEAR_MONTH=='no' and self.PREVIOUS_MONTH:
       previous_date=datetime.strptime(str(self.PREVIOUS_MONTH),'%Y-%m-%d').date()
       current_date=datetime.today().date()
       mm=current_date.month if current_date.year==previous_date.year else current_date.month+12
