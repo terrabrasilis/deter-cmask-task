@@ -10,7 +10,7 @@ DELETE="${DELETE} SELECT month as mm, year as yy "
 DELETE="${DELETE} FROM cloud.monthly_cloud_mun_table "
 DELETE="${DELETE} GROUP BY 1,2 "
 DELETE="${DELETE} ) "
-DELETE="${DELETE} FROM cloud.monthly_cloud_by_municipality WHERE year_yyyy=(SELECT yy FROM candidates) AND month_mm=(SELECT mm FROM candidates);"
+DELETE="${DELETE} DELETE FROM cloud.monthly_cloud_by_municipality WHERE year_yyyy=(SELECT yy FROM candidates) AND month_mm=(SELECT mm FROM candidates);"
 
 # used to insert new results on final cloud table
 INSERT="INSERT INTO cloud.monthly_cloud_by_municipality(cod_ibge, month_mm, year_yyyy, area_km, area_mun_km, uf) "
