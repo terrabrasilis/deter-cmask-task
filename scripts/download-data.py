@@ -74,9 +74,16 @@ class DownloadCMASK:
     #
     # used to force one specific year_month to download
     self.FORCE_YEAR_MONTH=os.getenv("FORCE_YEAR_MONTH", 'no')
+    # validation entry
+    try:
+      datetime.strptime(str(FORCE_YEAR_MONTH),'%Y-%m-%d')
+    except Exception as ex:
+      FORCE_YEAR_MONTH='no'
+      print("Variable FORCE_YEAR_MONTH is wrong and force to default 'no'")
+      print(f"Error: {str(ex)}")
     #
-    # used to skip checking the last closed month and runs every day
-    self.EVERY_DAY=os.getenv("EVERY_DAY", 'no')
+    # used to skip checking "if the last month is closed" and the flow is forced to happen every day.
+    self.EVERY_DAY=os.getenv("EVERY_DAY", 'no') if self.FORCE_YEAR_MONTH=='no' else 'no'
 
     # year and month to compose the URL used to download cmask
     self.YEAR_MONTH,self.PUBLISH_MONTH=self.__getCurrentYearMonth()
