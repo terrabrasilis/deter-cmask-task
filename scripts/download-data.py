@@ -76,9 +76,9 @@ class DownloadCMASK:
     self.FORCE_YEAR_MONTH=os.getenv("FORCE_YEAR_MONTH", 'no')
     # validation entry
     try:
-      datetime.strptime(str(FORCE_YEAR_MONTH),'%Y-%m-%d')
+      datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d')
     except Exception as ex:
-      FORCE_YEAR_MONTH='no'
+      self.FORCE_YEAR_MONTH='no'
       print("Variable FORCE_YEAR_MONTH is wrong and force to default 'no'")
       print(f"Error: {str(ex)}")
     #
