@@ -11,6 +11,7 @@ The expected periodicity is monthly, at the end of each month, for the acquisiti
 Preconditions:
 
  - SQLViews in DETER databases to deliver standardized data to the download script, such as: satellite, sensor, path_row, view_date and publish_date;
+ - Schema and tables for storing the cloud mask data for the last processed month and accumulating the data month by month;;
  - Configuration files to provide parameters for connecting to databases, one for each biome: (amazonia and cerrado);
  - Define the environment variables to guide the execution flow;
 
@@ -48,6 +49,45 @@ CREATE OR REPLACE VIEW cloud.deter_current
     deter_table.publish_month
    FROM public.deter_cerrado_mun_ucs as deter_table
   WHERE deter_table.areatotalkm >= 0.01::double precision;
+```
+
+### Database model
+
+For each biome/database we need a schema and two tables to store the cloud mask data, they are:
+
+```sql
+-- the cloud schema
+CREATE SCHEMA cloud AUTHORIZATION postgres;
+
+-- the ephemeral data table to store the results of the last processing
+CREATE TABLE cloud.monthly_cloud_mun_table
+(
+    id numeric,
+    geom geometry(MultiPolygon,4674),
+    nm_municip character varying(80),
+    cd_geocmu character varying(80),
+    uf character varying(80),
+    cod_ibge character varying(80),
+    area_px_km numeric,
+    area_km2 numeric,
+    month_cloud_km2 double precision,
+    year integer,
+    month integer
+);
+
+-- the final data table to accumulate month by month data
+CREATE TABLE cloud.monthly_cloud_by_municipality
+(
+    id serial,
+    cod_ibge integer NOT NULL,
+    month_mm integer NOT NULL,
+    year_yyyy integer NOT NULL,
+    area_km double precision NOT NULL,
+    area_mun_km double precision NOT NULL,
+    uf character varying(2) NOT NULL,
+    created_at date NOT NULL DEFAULT (now())::date,
+    CONSTRAINT monthly_cloud_by_municipality_id_pkey PRIMARY KEY (id)
+);
 ```
 
 ### Database configuration file
