@@ -61,6 +61,8 @@ class DownloadCMASK:
     self.BASE_URL=os.getenv("BASE_URL", self.BASE_URL)
     # the satellite list to generate the subpath list
     self.SATELLITES=['CBERS_4','CBERS_4A','AMAZONIA_1']
+    # define the last year month variable
+    self.LAST_YEAR_MONTH=None
     #
     # database params
     self.host=os.getenv("PGHOST", 'host')
@@ -77,7 +79,8 @@ class DownloadCMASK:
     # validation FORCE_YEAR_MONTH entry
     try:
       if self.FORCE_YEAR_MONTH!='no':
-        datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d')
+        # If we use a forced year/month (FORCE_YEAR_MONTH=YYYY-MM-01), so, use as the LAST_YEAR_MONTH;
+        self.LAST_YEAR_MONTH=f"{(datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d')).strftime('%Y-%m')}-01"
     except Exception as ex:
       self.FORCE_YEAR_MONTH='no'
       print("Variable FORCE_YEAR_MONTH is wrong, Set to default 'no'")
@@ -89,65 +92,86 @@ class DownloadCMASK:
     if self.EVERY_DAY!='yes':
       self.EVERY_DAY='no'
 
-    # year and month to compose the URL used to download cmask
-    self.YEAR_MONTH,self.PUBLISH_MONTH=self.__getCurrentYearMonth()
-
   def __configForBiome(self):
+    """
+    Used to set the specific values of job parameters per each biome.
+    """
+    # make connection with db based in biome
+    self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
     # define the base directory to store downloaded data
     self.DATA_DIR="{0}/{1}".format(self.DIR,self.BIOME)
     # create the output directory if it not exists
     os.makedirs(self.DATA_DIR, exist_ok=True)
     # try read previous month from control file
-    self.PREVIOUS_MONTH=self.__getPreviousMonthFromMetadata()
-
-    # define connection with db based in biome
-    self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
+    self.PREVIOUS_YEAR_MONTH=self.__getPreviousYearMonthFromMetadata()
+    # try read the last closed month from current deter table of the biome database
+    self.__getLastClosedMonth()
 
   def __buildQuery(self, satellite):
 
     satellite = satellite.replace('_', '-')
-    max_year_month = f"(SELECT MAX(publish_month) FROM cloud.deter_current)" if self.FORCE_YEAR_MONTH=='no' else f"'{self.FORCE_YEAR_MONTH}'::date"
 
-    SQL=f"SELECT satellite, path_row, view_date"
-    SQL=f"{SQL} FROM cloud.deter_current"
-    SQL=f"{SQL} WHERE publish_month={max_year_month}"
-    SQL=f"{SQL} AND satellite='{satellite}'"
-    SQL=f"{SQL} GROUP BY satellite, path_row, view_date order by view_date ASC"
+    sql=f"SELECT satellite, path_row, view_date"
+    sql=f"{sql} FROM cloud.deter_current"
+    sql=f"{sql} WHERE publish_month='{self.LAST_YEAR_MONTH}'::date"
+    sql=f"{sql} AND satellite='{satellite}'"
+    sql=f"{sql} GROUP BY satellite, path_row, view_date order by view_date ASC"
     
-    return SQL
+    return sql
 
-  def __lastMonthClosed(self):
+  def __getLastClosedMonth(self):
     """
-    Is the last month closed?
+    Get the latest closed month from the database, used to read the satellite list,
+    pathrows and image date and compose the CMASK image names.
 
-    Get the previous month reference based in the previous date from download control file and
-    make difference with the current month. If the result is 2, so we have the last closed month.
+    If we has a valid FORCE_YEAR_MONTH env var, use that as LAST_YEAR_MONTH
     """
-    # if no have previous month, or bypass check is enable, so continue
-    forward=True
+    if self.LAST_YEAR_MONTH is None:
+      sql = """
+      SELECT MAX(publish_month)::text FROM cloud.deter_current
+      WHERE view_date<=((SELECT MAX(publish_month) FROM cloud.deter_current)::date - interval '1 day')::date
+      """
+      resultset=self.__getData(sql)
+      if resultset is not None:
+        self.LAST_YEAR_MONTH=str(resultset[0][0])
 
-    if self.EVERY_DAY=='no' and self.FORCE_YEAR_MONTH=='no' and self.PREVIOUS_MONTH:
-      previous_date=datetime.strptime(str(self.PREVIOUS_MONTH),'%Y-%m-%d').date()
-      current_date=datetime.today().date()
-      mm=current_date.month if current_date.year==previous_date.year else current_date.month+12
-      forward=bool(mm-previous_date.month==2)
-
-    return forward
-  
-  def __getCurrentYearMonth(self):
+  def __continue(self):
     """
-    Define the current year and month reference used to download cmask data
+    Proceed to download?
+
+    Define whether we need to continue, respecting the following priority rules:
+     - If bypass checking is enabled (EVERY_DAY=='yes') and the last(1) year/month exists, continue, otherwise, next rule;
+     - Compare the last(1) year/month with the previous(2) year/month, if it's different, then continue, otherwise stop.
+
+    (1) The last year/month is read from database. See the __getLastClosedMonth function.
+    (2) The previous year/month is read* from download control file (acquisition_data_control) using the PREVIOUS_MONTH key.
+    * if there is no previous year/month, we assume that previous download jobs were never run, so continue.
     """
-    publish_month=year_month=None
+    bypass=self.EVERY_DAY=='yes' and self.LAST_YEAR_MONTH is not None
 
-    if self.FORCE_YEAR_MONTH=='no':
-      publish_month=datetime.today().strftime('%Y-%m-01') # to write on control file
-      year_month=datetime.today().strftime('%Y_%m')
-    else:
-      publish_month=self.FORCE_YEAR_MONTH
-      year_month=datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d').strftime('%Y_%m')
+    if not bypass and self.LAST_YEAR_MONTH is not None and self.PREVIOUS_YEAR_MONTH is not None:
+      lym=datetime.strptime(str(self.LAST_YEAR_MONTH),'%Y-%m-%d')
+      pym=datetime.strptime(str(self.PREVIOUS_YEAR_MONTH),'%Y-%m-%d')
+      bypass=lym>pym
+    
+    return bypass
 
-    return year_month, publish_month
+  def __getData(self, sql):
+
+    resultset=None
+    try:
+      cur = self.con.cursor()
+      cur.execute("SET application_name = 'ETL - DETER CMask Task';")
+      cur.execute(sql)
+      resultset = cur.fetchall()
+    except Exception as error:
+      resultset=None
+      raise error
+    finally:
+      cur.close()
+      self.con.close()
+
+    return resultset
 
   def __makeCmaskFileList(self):
     
@@ -157,11 +181,7 @@ class DownloadCMASK:
         sub_paths=self.__makeSubPathList(sat_name)
         sql=self.__buildQuery(sat_name)
         #SQL to get valid images of alerts at month
-        cur = self.con.cursor()
-        cur.execute("SET application_name = 'ETL - DETER CMask Task';")
-        cur.execute(sql)
-        resultset = cur.fetchall()
-
+        resultset=self.__getData(sql)
         for a_field in resultset:
           satellite = a_field[0] # from database
           path_row =  str(a_field[1])
@@ -195,9 +215,6 @@ class DownloadCMASK:
     except Exception as error:
       cmask_items=[]
       raise error
-    finally:
-      cur.close()
-      self.con.close()
 
     return cmask_items
 
@@ -205,7 +222,8 @@ class DownloadCMASK:
 
     subpaths=[]
     satellite = satellite.replace('_', '')
-    url="{0}/{1}/{2}".format(self.BASE_URL, satellite, self.YEAR_MONTH)
+    year_month=datetime.strptime(str(self.LAST_YEAR_MONTH),'%Y-%m-%d').strftime('%Y_%m')
+    url="{0}/{1}/{2}".format(self.BASE_URL, satellite, year_month)
     # Getting page HTML through request
     page = requests.get(url)
     # Parsing content using beautifulsoup
@@ -245,12 +263,13 @@ class DownloadCMASK:
 
   def __setMetadataResults(self):
     """
-    Write download control file with date and number of files matched to use on next acquisition process
+    Write download control file with year/month (formated as YYYY-MM-01)
+    and number of files matched to use on next acquisition process
     """
     output_file="{0}/acquisition_data_control".format(self.DATA_DIR)
     # if the file already exists, truncate before write
     with open(output_file, 'w') as f:
-      f.write("PREVIOUS_MONTH=\"{0}\"\n".format(self.PUBLISH_MONTH))
+      f.write("PREVIOUS_MONTH=\"{0}\"\n".format(self.LAST_YEAR_MONTH))
       f.write("found_items={0}".format(self.found_items))
 
   def __removeMetadataFile(self):
@@ -261,7 +280,7 @@ class DownloadCMASK:
     if os.path.exists(output_file):
       os.remove(output_file)
 
-  def __getPreviousMonthFromMetadata(self):
+  def __getPreviousYearMonthFromMetadata(self):
     """
     Read previous month from download control file
     """
@@ -281,7 +300,7 @@ class DownloadCMASK:
     try:
       if self.BIOME:
         self.__configForBiome()
-        if self.__lastMonthClosed():
+        if self.__continue():
           self.__download()
           # used to write some information into a file that used for import data process
           self.__setMetadataResults()
