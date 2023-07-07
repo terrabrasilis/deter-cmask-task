@@ -81,10 +81,10 @@ class DownloadCMASK:
       if self.FORCE_YEAR_MONTH!='no':
         # If we use a forced year/month (FORCE_YEAR_MONTH=YYYY-MM-01), so, use as the LAST_YEAR_MONTH;
         self.LAST_YEAR_MONTH=f"{(datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d')).strftime('%Y-%m')}-01"
-    except Exception as ex:
+    except Exception as error:
       self.FORCE_YEAR_MONTH='no'
       print("Variable FORCE_YEAR_MONTH is wrong, Set to default 'no'")
-      print(f"Error: {str(ex)}")
+      print(f"Exception error message: {str(error)}")
     #
     # used to skip checking "if the last month is closed" and the flow is forced to happen every day.
     self.EVERY_DAY=os.getenv("EVERY_DAY", 'no') if self.FORCE_YEAR_MONTH=='no' else 'no'
@@ -96,8 +96,6 @@ class DownloadCMASK:
     """
     Used to set the specific values of job parameters per each biome.
     """
-    # make connection with db based in biome
-    self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
     # define the base directory to store downloaded data
     self.DATA_DIR="{0}/{1}".format(self.DIR,self.BIOME)
     # create the output directory if it not exists
@@ -107,7 +105,14 @@ class DownloadCMASK:
     # try read the last closed month from current deter table of the biome database
     self.__getLastClosedMonth()
 
-  def __buildQuery(self, satellite):
+  def __getImagesInformation(self, satellite:str):
+    """
+    Build and execute the SQL to get valid images of alerts at month.
+
+    Mandatory parameters:
+    -----------------------------
+    :param:satellite: The valid name of satellite in DETER database.
+    """
 
     satellite = satellite.replace('_', '-')
 
@@ -116,8 +121,10 @@ class DownloadCMASK:
     sql=f"{sql} WHERE publish_month='{self.LAST_YEAR_MONTH}'::date"
     sql=f"{sql} AND satellite='{satellite}'"
     sql=f"{sql} GROUP BY satellite, path_row, view_date order by view_date ASC"
+
+    resultset=self.__getData(sql)
     
-    return sql
+    return resultset
 
   def __getLastClosedMonth(self):
     """
@@ -156,27 +163,31 @@ class DownloadCMASK:
     
     return bypass
 
-  def __getData(self, sql):
+  def __getData(self, sql:str):
 
     resultset=cur=None
-    if self.con:
-      cur = self.con.cursor()
+    # if connected, get the cursor
+    if self.con is None or self.con.closed>0:
+      # make connection with db based
+      self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
+
     try:
-      if cur:
-        cur.execute("SET application_name = 'ETL - DETER CMask Task';")
-        cur.execute(sql)
-        resultset = cur.fetchall()
+      cur = self.con.cursor()
+      cur.execute("SET application_name = 'ETL - DETER CMask Task';")
+      cur.execute(sql)
+      resultset = cur.fetchall()
     except Exception as error:
       print("Failure when exec query on database")
-      print(error)
+      print(f"Exception error message: {str(error)}")
       resultset=None
       raise error
-    finally:
-      self.con.cursor().close()
-      if self.con.closed==0:
-        self.con.close()
 
     return resultset
+
+  def __closeResources(self):
+    if self.con.closed==0:
+      self.con.close()
+      self.con=None
 
   def __makeCmaskFileList(self):
     
@@ -184,9 +195,7 @@ class DownloadCMASK:
     try:
       for sat_name in self.SATELLITES:
         sub_paths=self.__makeSubPathList(sat_name)
-        sql=self.__buildQuery(sat_name)
-        #SQL to get valid images of alerts at month
-        resultset=self.__getData(sql)
+        resultset=self.__getImagesInformation(sat_name)
         for a_field in resultset:
           satellite = a_field[0] # from database
           path_row =  str(a_field[1])
@@ -264,7 +273,7 @@ class DownloadCMASK:
           print("Download fail with HTTP Error: {0}".format(response.status_code))
       except Exception as error:
         print (cmask_item['tif_name'] + " not found \n")
-        print (error.msg)
+        print(f"Exception error message: {str(error)}")
         raise error
 
   def __setMetadataResults(self):
@@ -306,7 +315,9 @@ class DownloadCMASK:
         print("Wrong configurations")
     except Exception as error:
       print("There was an error when trying to download data.")
-      print(error)
+      print(f"Exception error message: {str(error)}")
+    finally:
+      self.__closeResources()
 
 # end of class
 

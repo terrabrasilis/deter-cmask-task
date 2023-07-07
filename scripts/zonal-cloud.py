@@ -161,11 +161,13 @@ class ZonalCloud:
                 # after all updates, confirm the changes
                 self.con.commit()
             except Exception as error:
+                print("Failure on write new cloud areas into database.")
+                print(f"Exception error message: {str(error)}")
                 self.con.rollback()
                 raise error
             finally:
-                self.con.cursor().close()
-                self.con.close()
+                if self.con.closed==0:
+                    self.con.close()
 
 # end of class
 
