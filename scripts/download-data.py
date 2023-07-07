@@ -70,6 +70,7 @@ class DownloadCMASK:
     self.port=os.getenv("PGPORT", '5432')
     self.user=os.getenv("PGUSER", 'user')
     self.password=os.getenv("PGPASSWORD", 'password')
+    self.con=None # define class attribute
     #
     # the current biome name
     self.BIOME=os.getenv("TARGET_BIOME", 'amazonia')
@@ -187,7 +188,6 @@ class DownloadCMASK:
   def __closeResources(self):
     if self.con.closed==0:
       self.con.close()
-      self.con=None
 
   def __makeCmaskFileList(self):
     
