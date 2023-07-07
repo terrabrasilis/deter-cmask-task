@@ -158,17 +158,19 @@ class DownloadCMASK:
 
   def __getData(self, sql):
 
-    resultset=None
-    try:
+    resultset=cur=None
+    if self.con:
       cur = self.con.cursor()
-      cur.execute("SET application_name = 'ETL - DETER CMask Task';")
-      cur.execute(sql)
-      resultset = cur.fetchall()
+    try:
+      if cur:
+        cur.execute("SET application_name = 'ETL - DETER CMask Task';")
+        cur.execute(sql)
+        resultset = cur.fetchall()
     except Exception as error:
       resultset=None
       raise error
     finally:
-      cur.close()
+      self.con.cursor().close()
       self.con.close()
 
     return resultset
@@ -260,6 +262,7 @@ class DownloadCMASK:
       except Exception as error:
         print (cmask_item['tif_name'] + " not found \n")
         print (error.msg)
+        raise error
 
   def __setMetadataResults(self):
     """
@@ -271,14 +274,6 @@ class DownloadCMASK:
     with open(output_file, 'w') as f:
       f.write("PREVIOUS_MONTH=\"{0}\"\n".format(self.LAST_YEAR_MONTH))
       f.write("found_items={0}".format(self.found_items))
-
-  def __removeMetadataFile(self):
-    """
-    Delete the metadata file if there is an error trying to download the data
-    """
-    output_file="{0}/acquisition_data_control".format(self.DATA_DIR)
-    if os.path.exists(output_file):
-      os.remove(output_file)
 
   def __getPreviousYearMonthFromMetadata(self):
     """
@@ -307,7 +302,6 @@ class DownloadCMASK:
       else:
         print("Wrong configurations")
     except Exception as error:
-      down.__removeMetadataFile()
       print("There was an error when trying to download data.")
       print(error)
 
