@@ -167,11 +167,14 @@ class DownloadCMASK:
         cur.execute(sql)
         resultset = cur.fetchall()
     except Exception as error:
+      print("Failure when exec query on database")
+      print(error)
       resultset=None
       raise error
     finally:
       self.con.cursor().close()
-      self.con.close()
+      if self.con.closed==0:
+        self.con.close()
 
     return resultset
 
