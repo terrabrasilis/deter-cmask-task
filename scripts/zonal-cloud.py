@@ -133,39 +133,39 @@ class ZonalCloud:
 
         return noncloud_data,pixel_area
 
-    def __storeDataOnTableCloud(self, cloud_area_by_mun, cod_ibge):
-
-        query  = f"UPDATE {self.zonal_table} SET month_cloud_km2 = {str(cloud_area_by_mun)}, year={int(self.YEAR)}, month={int(self.MONTH)} WHERE cod_ibge = '{str(cod_ibge)}';"
-        cur = self.con.cursor()
-        cur.execute(query)
-        self.con.commit()
-
     def execute(self):
 
         zonals=self.__getZonalAreas()
         noncloud_data,pixel_area=self.__getNonCloudInfos()
         if not zonals is None and not noncloud_data is None and not pixel_area is None:
-            for _, row in zonals.iterrows():
-                geoms = [mapping(row.geom)]
-                cod_ibge = row.cod_ibge
-                area_mun = row.area_px_km
-                out_image, out_transform = mask(noncloud_data, geoms, nodata=0, crop=True)
-                unique, counts = np.unique(out_image[0], return_counts=True)
-                unique_counts = np.asarray((unique, counts)).T
-                counts = pd.DataFrame(unique_counts)
-                
-                for _, count in counts.iterrows():
-                    pixel_value=count[0] # the specific pixel value that exists inside a polygon
-                    count_pixels=count[1] # how many pixels are inside a polygon for the specific pixel value
-                    if pixel_value > 0:
-                        area_nnuvem = pixel_area * count_pixels
-                        cloud_area_by_mun = area_mun - area_nnuvem
-                    else:
-                        cloud_area_by_mun = area_mun
-                self.__storeDataOnTableCloud(cloud_area_by_mun, cod_ibge)
-            
-            # close database connection
-            self.con.close()
+            try:
+                for _, row in zonals.iterrows():
+                    geoms = [mapping(row.geom)]
+                    cod_ibge = row.cod_ibge
+                    area_mun = row.area_px_km
+                    out_image, out_transform = mask(noncloud_data, geoms, nodata=0, crop=True)
+                    unique, counts = np.unique(out_image[0], return_counts=True)
+                    unique_counts = np.asarray((unique, counts)).T
+                    counts = pd.DataFrame(unique_counts)
+                    
+                    for _, count in counts.iterrows():
+                        pixel_value=count[0] # the specific pixel value that exists inside a polygon
+                        count_pixels=count[1] # how many pixels are inside a polygon for the specific pixel value
+                        if pixel_value > 0:
+                            area_nnuvem = pixel_area * count_pixels
+                            cloud_area_by_mun = area_mun - area_nnuvem
+                        else:
+                            cloud_area_by_mun = area_mun
+                    query  = f"UPDATE {self.zonal_table} SET month_cloud_km2 = {str(cloud_area_by_mun)}, year={int(self.YEAR)}, month={int(self.MONTH)} WHERE cod_ibge = '{str(cod_ibge)}';"
+                    self.con.cursor().execute(query)
+                # after all updates, confirm the changes
+                self.con.commit()
+            except Exception as error:
+                self.con.rollback()
+                raise error
+            finally:
+                self.con.cursor().close()
+                self.con.close()
 
 # end of class
 
