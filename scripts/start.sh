@@ -40,7 +40,7 @@ do
         source "${DATA_DIR}/${TARGET_BIOME}/acquisition_data_control"
         year_month=$(date +'%Y%m' -d "${PREVIOUS_MONTH}")
         # check if has some downloaded files to current year/month
-        FOUNDED_FILES=$(countDownloadedFiles "${year_month}" "${DATA_DIR}/${TARGET_BIOME}/")
+        FOUNDED_FILES=$(countDownloadedFiles "${DATA_DIR}/${TARGET_BIOME}/" "${year_month}")
 
         if [[ "0" = "${FOUNDED_FILES}" ]]; then
             echo "Downloaded files not found, cancel"
