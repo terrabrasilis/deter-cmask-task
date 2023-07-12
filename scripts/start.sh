@@ -4,7 +4,7 @@
 # SHARED_DIR=$SCRIPT_DIR"/../data"
 
 # to store run log
-DATE_LOG=$(date +"%Y-%m-%d_%H:%M:%S")
+DATE_LOG=$(date +"%Y_%m_%d_%H_%M_%S")
 # The data work directory.
 DATA_DIR=$SHARED_DIR
 export DATA_DIR
@@ -25,7 +25,7 @@ do
     LOG_FILE=${TARGET_BIOME}_cmaks_${DATE_LOG}.log
 
     # load postgres parameters from config file in config/pgconfig
-    . ./dbconf.sh "${TARGET_BIOME}" >> ${DATA_DIR}/${LOG_FILE}
+    . ./dbconf.sh "${TARGET_BIOME}" >> "${DATA_DIR}/config_${LOG_FILE}"
     
     # to read inside python
     export TARGET_BIOME=${TARGET_BIOME}

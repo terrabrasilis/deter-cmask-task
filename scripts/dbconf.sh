@@ -8,6 +8,7 @@ then
   export PGHOST=$host
   export PGPORT=$port
   export PGDB=$database
+  echo "Loaded the Postgres config file for target: ${TARGET_FILE}."
 else
   echo "Missing Postgres config file for target: ${TARGET_FILE}."
   exit
