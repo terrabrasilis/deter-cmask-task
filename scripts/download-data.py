@@ -186,7 +186,8 @@ class DownloadCMASK:
     return resultset
 
   def __closeResources(self):
-    if self.con.closed==0:
+    # closed==0 is code for connected. See psycopg2 docs: https://www.psycopg.org/docs/connection.html#connection.closed
+    if self.con is not None and self.con.closed==0:
       self.con.close()
 
   def __makeCmaskFileList(self):
