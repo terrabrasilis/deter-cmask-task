@@ -11,7 +11,7 @@ The expected periodicity is monthly, at the end of each month, for the acquisiti
 Preconditions:
 
  - SQLViews in DETER databases to deliver standardized data to the download script, such as: satellite, sensor, path_row, view_date and publish_date;
- - Schema and tables for storing the cloud mask data for the last processed month and accumulating the data month by month;;
+ - Schema and tables for storing the cloud mask data for the last processed month and accumulating the data month by month;
  - Configuration files to provide parameters for connecting to databases, one for each biome: (amazonia and cerrado);
  - Define the environment variables to guide the execution flow;
  - Warning: In the download-data.py script we have some hardcoded definitions. These values may change in the future and must be adjusted directly in the code.
@@ -159,3 +159,7 @@ To process once for each closed month.
       - "EVERY_DAY=no"
    ...
 ```
+
+## About code
+
+Adapted from the original by Luis Eduardo P. Maurano <luis.maurano@inpe.br>
