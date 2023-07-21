@@ -14,6 +14,7 @@ Preconditions:
  - Schema and tables for storing the cloud mask data for the last processed month and accumulating the data month by month;;
  - Configuration files to provide parameters for connecting to databases, one for each biome: (amazonia and cerrado);
  - Define the environment variables to guide the execution flow;
+ - Warning: In the download-data.py script we have some hardcoded definitions. These values may change in the future and must be adjusted directly in the code.
 
 ### Database configuration SQLView
 
