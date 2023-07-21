@@ -63,6 +63,8 @@ class DownloadCMASK:
     self.SATELLITES=['CBERS_4','CBERS_4A','AMAZONIA_1']
     # define the last year month variable
     self.LAST_YEAR_MONTH=None
+    # to bypass the control and use the force date, only if force date is valid
+    self.FORCE_DATE=False
     #
     # database params
     self.host=os.getenv("PGHOST", 'host')
@@ -82,6 +84,7 @@ class DownloadCMASK:
       if self.FORCE_YEAR_MONTH!='no':
         # If we use a forced year/month (FORCE_YEAR_MONTH=YYYY-MM-01), so, use as the LAST_YEAR_MONTH;
         self.LAST_YEAR_MONTH=f"{(datetime.strptime(str(self.FORCE_YEAR_MONTH),'%Y-%m-%d')).strftime('%Y-%m')}-01"
+        self.FORCE_DATE=True # Force year month is ok, so enable bypass
     except Exception as error:
       self.FORCE_YEAR_MONTH='no'
       print("Variable FORCE_YEAR_MONTH is wrong, Set to default 'no'")
@@ -160,7 +163,7 @@ class DownloadCMASK:
     if not bypass and self.LAST_YEAR_MONTH is not None and self.PREVIOUS_YEAR_MONTH is not None:
       lym=datetime.strptime(str(self.LAST_YEAR_MONTH),'%Y-%m-%d')
       pym=datetime.strptime(str(self.PREVIOUS_YEAR_MONTH),'%Y-%m-%d')
-      bypass=lym>pym
+      bypass=(self.FORCE_DATE or lym>pym)
     
     return bypass
 
