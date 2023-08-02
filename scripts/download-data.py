@@ -158,7 +158,7 @@ class DownloadCMASK:
     (2) The previous year/month is read* from download control file (acquisition_data_control) using the PREVIOUS_MONTH key.
     * if there is no previous year/month, we assume that previous download jobs were never run, so continue.
     """
-    bypass=self.EVERY_DAY=='yes' and self.LAST_YEAR_MONTH is not None
+    bypass=(self.FORCE_DATE or (self.EVERY_DAY=='yes' and self.LAST_YEAR_MONTH is not None))
 
     if not bypass and self.LAST_YEAR_MONTH is not None and self.PREVIOUS_YEAR_MONTH is not None:
       lym=datetime.strptime(str(self.LAST_YEAR_MONTH),'%Y-%m-%d')
