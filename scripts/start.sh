@@ -8,6 +8,7 @@ DATE_LOG=$(date +"%Y_%m_%d_%H_%M_%S")
 # The data work directory.
 DATA_DIR=$SHARED_DIR
 export DATA_DIR
+DATA_DIR_LOG="${DATA_DIR}/log"
 
 # go to the scripts directory
 cd ${SCRIPT_DIR}
@@ -25,13 +26,13 @@ do
     LOG_FILE=${TARGET_BIOME}_cmaks_${DATE_LOG}.log
 
     # load postgres parameters from config file in config/pgconfig
-    . ./dbconf.sh "${TARGET_BIOME}" >> "${DATA_DIR}/config_${LOG_FILE}"
+    . ./dbconf.sh "${TARGET_BIOME}" >> "${DATA_DIR_LOG}/config_${LOG_FILE}"
     
     # to read inside python
     export TARGET_BIOME=${TARGET_BIOME}
     
     # get cmask files scraping download page
-    python3 download-data.py >> "${DATA_DIR}/download_${LOG_FILE}"
+    python3 download-data.py >> "${DATA_DIR_LOG}/download_${LOG_FILE}"
     
     # check if some previous download is done
     if [[ -f "${DATA_DIR}/${TARGET_BIOME}/acquisition_data_control" ]];
@@ -46,13 +47,13 @@ do
             echo "Downloaded files not found, cancel"
         else
             # using gdal to extract non cloud pixels (pixel value 127) from cmask files
-            . ./process-cloud.sh "${TARGET_BIOME}" >> "${DATA_DIR}/gdal_${LOG_FILE}"
+            . ./process-cloud.sh "${TARGET_BIOME}" >> "${DATA_DIR_LOG}/gdal_${LOG_FILE}"
             #
             # build cloud cover by municipalities using cmask files
-            python3 zonal-cloud.py >> "${DATA_DIR}/zonal_${LOG_FILE}"
+            python3 zonal-cloud.py >> "${DATA_DIR_LOG}/zonal_${LOG_FILE}"
             #
             # Adding cloud cover data to the final accumulation table
-            . ./insert-final-cloud-cover.sh >> "${DATA_DIR}/insert_${LOG_FILE}"
+            . ./insert-final-cloud-cover.sh >> "${DATA_DIR_LOG}/insert_${LOG_FILE}"
         fi;
     fi;
 done
