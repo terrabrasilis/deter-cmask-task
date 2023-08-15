@@ -135,12 +135,14 @@ class DownloadCMASK:
     Get the latest closed month from the database, used to read the satellite list,
     pathrows and image date and compose the CMASK image names.
 
+    Depends of the cloud.deter_current SQL View into database.
+
     If we has a valid FORCE_YEAR_MONTH env var, use that as LAST_YEAR_MONTH
     """
     if self.LAST_YEAR_MONTH is None:
       sql = """
       SELECT MAX(publish_month)::text FROM cloud.deter_current
-      WHERE view_date<=((SELECT MAX(publish_month) FROM cloud.deter_current)::date - interval '1 day')::date
+      WHERE view_date < (SELECT date_trunc('month',MAX(date_audit))::date FROM cloud.deter_current)
       """
       resultset=self.__getData(sql)
       if resultset is not None:
