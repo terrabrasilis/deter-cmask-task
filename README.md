@@ -26,14 +26,18 @@ For amazonia:
 CREATE OR REPLACE VIEW cloud.deter_current
  AS
  SELECT deter_table.gid || '_curr'::text AS gid,
-    substring(deter_table.orbitpoint,0,4) ||'_'|| substring(deter_table.orbitpoint,4) AS path_row,
+    ("substring"(deter_table.orbitpoint::text, 0, 4) || '_'::text) || "substring"(deter_table.orbitpoint::text, 4) AS path_row,
     deter_table.date AS view_date,
+    deter_table.date_audit,
     deter_table.sensor,
     deter_table.satellite,
     deter_table.publish_month
-   FROM terrabrasilis.deter_table as deter_table
-  WHERE deter_table.date > (( SELECT prodes_reference.end_date
-           FROM prodes_reference)) AND deter_table.areatotalkm >= 0.01::double precision AND deter_table.uf::text <> 'MS'::text AND st_geometrytype(deter_table.geom) <> 'ST_LineString'::text;
+   FROM deter_table
+  WHERE deter_table.date > (( SELECT prodes_reference.end_date FROM prodes_reference))
+   AND deter_table.areatotalkm >= 0.01::double precision
+   AND deter_table.uf::text <> 'MS'::text
+   AND st_geometrytype(deter_table.geom) <> 'ST_LineString'::text;
+
 
 ```
 
@@ -45,10 +49,11 @@ CREATE OR REPLACE VIEW cloud.deter_current
  SELECT deter_table.origin_gid || '_curr'::text AS gid,
     deter_table.path_row,
     deter_table.view_date,
+    deter_table.created_date AS date_audit,
     deter_table.sensor,
     deter_table.satellite,
     deter_table.publish_month
-   FROM public.deter_cerrado_mun_ucs as deter_table
+   FROM deter_cerrado_mun_ucs deter_table
   WHERE deter_table.areatotalkm >= 0.01::double precision;
 ```
 
