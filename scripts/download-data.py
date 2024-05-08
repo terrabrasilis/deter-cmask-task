@@ -57,7 +57,7 @@ class DownloadCMASK:
     self.DIR=dir if dir else os.path.realpath(os.path.join(os.path.dirname(__file__),"../data/"))
     self.DIR=os.getenv("DATA_DIR", self.DIR)
     # the base URL of download page service
-    self.BASE_URL=url if url else 'http://www.dpi.inpe.br/catalog/tmp'
+    self.BASE_URL=url if url else 'http://cbers9.dpi.inpe.br:8089/files'
     self.BASE_URL=os.getenv("BASE_URL", self.BASE_URL)
     # the satellite list to generate the subpath list
     self.SATELLITES=['CBERS_4','CBERS_4A','AMAZONIA_1']
