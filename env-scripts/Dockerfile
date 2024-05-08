@@ -6,7 +6,7 @@
 #   docker run -d --rm --name deter-cmask-script -v $PWD:/usr/local/data terrabrasilis/deter-cmask-data-task:vx.y.z
 #
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL "br.inpe.dpi"="INPE/DPI-TerraBrasilis" \
 br.inpe.dpi.terrabrasilis="script-tasks" \
