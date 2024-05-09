@@ -4,6 +4,7 @@
 echo "export SHARED_DIR=\"$SHARED_DIR\"" >> /etc/environment
 echo "export SCRIPT_DIR=\"$SCRIPT_DIR\"" >> /etc/environment
 echo "export TZ=\"America/Sao_Paulo\"" >> /etc/environment
+echo "export PATH=\"/usr/local/bin:$PATH\"" >> /etc/environment
 #
 # if defined as env var, its used to force a specific year month to download data.
 if [[ -v FORCE_YEAR_MONTH ]]; then
