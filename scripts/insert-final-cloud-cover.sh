@@ -35,6 +35,9 @@ if [[ "YES" = "${CHECK_DATA}" ]]; then
 
     ${PG_BIN}/psql ${PG_CON} -t -c "${INSERT}"
 
+    # store the final geotiff to send to the download area
+    mkdir ${DATA_DIR}/${TARGET_BIOME}/final_files
+    mv ${DATA_DIR}/${TARGET_BIOME}/noncloud_${year}${month}_64.tif ${DATA_DIR}/${TARGET_BIOME}/final_files/noncloud_${year}${month}_64.tif
     # remove downloaded and temporary files
     rm -f ${DATA_DIR}/${TARGET_BIOME}/*${year_month}*.{tif,vrt}
 fi;
