@@ -16,6 +16,11 @@ if [[ -v EVERY_DAY ]]; then
     # Expected value is: yes to force or whatever
     echo "export EVERY_DAY=\"$EVERY_DAY\"" >> /etc/environment
 fi;
+# if defined as env var, its used to force the input BASE_URL from Stack.
+if [[ -v BASE_URL ]]; then
+    # Expected value is an URL string to load input files
+    echo "export BASE_URL=\"$BASE_URL\"" >> /etc/environment
+fi;
 #
 # run cron in foreground
 cron -f
