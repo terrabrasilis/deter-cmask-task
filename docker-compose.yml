@@ -3,14 +3,15 @@ version: '2'
 
 services:
   cmask-data-task:
-    image: 'terrabrasilis/deter-cmask-data-task:v1.0.0'
+    image: 'terrabrasilis/deter-cmask-data-task:v1.0.11'
     container_name: cmask-data-task
     restart: always
     environment:
-      - "FORCE_YEAR_MONTH=2023-05-01"
+      - "FORCE_YEAR_MONTH=no"
       - "EVERY_DAY=no"
+      - "BASE_URL=http://cbers9.dpi.inpe.br:8089/files"
     volumes:
-      - '/dockerdata/deter-cmask-data-task/data:/usr/local/data'
+      - '/home/andre/Dados/tmp/cmask:/usr/local/data'
     networks:
       - workspace-docker_default
 

@@ -6,6 +6,13 @@ echo "export SCRIPT_DIR=\"$SCRIPT_DIR\"" >> /etc/environment
 echo "export TZ=\"America/Sao_Paulo\"" >> /etc/environment
 echo "export PATH=\"/usr/local/bin:$PATH\"" >> /etc/environment
 #
+# if defined as env var, its used to force rebuild a range of year/month.
+if [[ -v FORCE_REBUILD && -v START_YEAR_MONTH && -v END_YEAR_MONTH ]]; then
+    # The format is: YYYY-MM
+    echo "export FORCE_REBUILD=\"$FORCE_REBUILD\"" >> /etc/environment
+    echo "export START_YEAR_MONTH=\"$START_YEAR_MONTH\"" >> /etc/environment
+    echo "export END_YEAR_MONTH=\"$END_YEAR_MONTH\"" >> /etc/environment
+fi;
 # if defined as env var, its used to force a specific year month to download data.
 if [[ -v FORCE_YEAR_MONTH ]]; then
     # The format is: YYYY-MM-DD where DD is always 01
