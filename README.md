@@ -6,6 +6,8 @@ Automation or semi-automation to read the cmask data from the HTTP download page
 
 The expected periodicity is monthly, at the end of each month, for the acquisition and calculation of new data.
 
+The Geotiff files produced in the process are moved to the download area. The download area must be defined as a container volume in the Stack configuration. See the background-tasks.yaml file in the [docker-stack](https://github.com/terrabrasilis/docker-stacks.git) repository.
+
 ## Configurations
 
 Preconditions:
@@ -15,6 +17,7 @@ Preconditions:
  - Configuration files to provide parameters for connecting to databases, one for each biome: (amazonia and cerrado);
  - Define the environment variables to guide the execution flow;
  - Warning: In the download-data.py script we have some hardcoded definitions. These values may change in the future and must be adjusted directly in the code.
+ - Warning: In the insert-final-cloud-cover.sh script, we have the download area as a directory path (/usr/local/download/static/cmask), hardcoded in the code.
 
 ### Database configuration SQLView
 
@@ -125,6 +128,8 @@ The default value for these variables is 'no' if not defined.
 
  > EVERY_DAY: if defined and the value is not  equal 'no' ("EVERY_DAY=no"), its used to skip checking "if the last month is closed" and the flow is forced to happen every day. If the value equals 'yes' ("EVERY_DAY=yes"), don't use FORCE_YEAR_MONTH together because it will download the same data every day, or set to default "FORCE_YEAR_MONTH=no".
 
+ > BASE_URL: Optional parameter to be passed to the container instance. The base URL where the cmask files are located.
+
 The examples for setting these variables inside the docker compose fragment.
 
 To process once for a specific year/month.
@@ -134,6 +139,7 @@ To process once for a specific year/month.
       # force download and process all cmask for May 2023
       - "FORCE_YEAR_MONTH=2023-05-01"
       - "EVERY_DAY=no"
+      - "BASE_URL=http://cbers9.dpi.inpe.br:8089/files"
    ...
 ```
 
