@@ -28,11 +28,11 @@ RUN apt-get -o Acquire::ForceIPv4=true update \
 # define the timezone to run cron
 ENV TZ=America/Sao_Paulo
 # define the install path env var
-ENV INSTALL_PATH /usr/local
+ENV INSTALL_PATH=/usr/local
 # the data directory for put generated files 
-ENV SHARED_DIR $INSTALL_PATH/data
+ENV SHARED_DIR=$INSTALL_PATH/data
 # the scripts directory
-ENV SCRIPT_DIR $INSTALL_PATH/scripts-shell
+ENV SCRIPT_DIR=$INSTALL_PATH/scripts-shell
 
 # create directories
 RUN mkdir -p ${SHARED_DIR} \
