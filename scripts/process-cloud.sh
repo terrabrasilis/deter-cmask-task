@@ -27,9 +27,9 @@ then
         gdalbuildvrt noncloud_${year_month}_64.vrt *${year_month}*_epsg4326_nn.tif
 
         if [[ "${TARGET_BIOME}" = "amazonia" ]]; then
-            BBOX="-73.9904032605401056 -18.0417666700000012 -43.9518273629147984 5.2718410771729696"
+            BBOX="-73.9904032605401056 5.2718410771729696 -43.9518273629147984 -18.0417666700000012"
         else
-            BBOX="-60.1099291026705842 -24.6851194256049205 -41.5224714772777688 -2.3267091205464463"
+            BBOX="-60.1099291026705842 -2.3267091205464463 -41.5224714772777688 -24.6851194256049205"
         fi
 
         gdal_translate -of GTiff -co "COMPRESS=LZW" -a_ullr ${BBOX} -co BIGTIFF=YES noncloud_${year_month}_64.vrt noncloud_${year_month}_64.tif
