@@ -37,7 +37,6 @@ if [[ "YES" = "${CHECK_DATA}" ]]; then
 
     # store the final geotiff to send to the download area
     # The download area is defined as the container volume in the Stack configuration. (/usr/local/download/static/cmask)
-    mkdir ${DATA_DIR}/${TARGET_BIOME}/final_files
     mv ${DATA_DIR}/${TARGET_BIOME}/noncloud_${year}${month}_64.tif /usr/local/download/static/cmask/${TARGET_BIOME}/noncloud_${year}${month}_64.tif
     # remove downloaded and temporary files
     rm -f ${DATA_DIR}/${TARGET_BIOME}/*${year_month}*.{tif,vrt}
