@@ -59,6 +59,17 @@ class DownloadCMASK:
     # the base URL of download page service
     self.BASE_URL=url if url else 'http://cbers9.dpi.inpe.br:8089/files'
     self.BASE_URL=os.getenv("BASE_URL", self.BASE_URL)
+
+    # try get http proxy from env vars
+    self.proxies = None
+    http_proxy=os.getenv("http_proxy")
+    https_proxy=os.getenv("https_proxy")
+    if http_proxy and https_proxy:
+      self.proxies = {
+        "http": "http://192.168.15.9:3128",
+        "https": "https://192.168.15.9:3128",
+      }
+
     # the satellite list to generate the subpath list
     self.SATELLITES=['CBERS_4','CBERS_4A','AMAZONIA_1']
     # define the last year month variable
@@ -245,7 +256,7 @@ class DownloadCMASK:
     year_month=datetime.strptime(str(self.LAST_YEAR_MONTH),'%Y-%m-%d').strftime('%Y_%m')
     url="{0}/{1}/{2}".format(self.BASE_URL, satellite, year_month)
     # Getting page HTML through request
-    page = requests.get(url)
+    page = requests.get(url, proxies=self.proxies)
     # Parsing content using beautifulsoup
     content_parsed = BeautifulSoup(page.content, 'html.parser')
     # Selecting all of the anchors with titles
@@ -266,10 +277,10 @@ class DownloadCMASK:
     self.found_items=0
     for cmask_item in cmask_items:
       try:
-        headers=requests.head(cmask_item['url'])
+        headers=requests.head(cmask_item['url'], proxies=self.proxies)
         if headers.status_code==404:
           continue
-        response = requests.get(cmask_item['url'])
+        response = requests.get(cmask_item['url'], proxies=self.proxies)
         if response.ok:
           with open(f"{self.DATA_DIR}/{cmask_item['tif_name']}", 'wb') as f:
             f.write(response.content)

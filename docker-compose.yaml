@@ -1,0 +1,17 @@
+services:
+  cmask-data-task:
+    image: 'terrabrasilis/deter-cmask-data-task:v1.0.13'
+    container_name: cmask-data-task
+    restart: always
+    environment:
+      - "FORCE_YEAR_MONTH=no"
+      - "EVERY_DAY=no"
+      - "BASE_URL=http://150.163.2.139:8089/files"
+      - "FORCE_REBUILD=no"
+      - "START_YEAR_MONTH=2022-01"
+      - "END_YEAR_MONTH=2023-12"
+      - "http_proxy=http://192.168.15.9:3128"
+      - "https_proxy=http://192.168.15.9:3128"
+    volumes:
+      - '/home/andre/Projects/workspace-terrabrasilis2.0/deter-cmask-tasks/data:/usr/local/data'
+      - '/home/andre/Projects/workspace-terrabrasilis2.0/deter-cmask-tasks/data/download:/usr/local/download/static/cmask'

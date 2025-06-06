@@ -131,7 +131,9 @@ The default value for these variables is 'no' if not defined.
  > BASE_URL: Optional parameter to be passed to the container instance. The base URL where the cmask files are located.
 
  > FORCE_REBUILD: Used to force the reconstruction of all data for a year/month range. Must be used in conjunction with the variables: START_YEAR_MONTH and END_YEAR_MONTH.
+
  > START_YEAR_MONTH: The starting year/month for the date range in the format: YYYY/MM
+
  > END_YEAR_MONTH: The ending year/month for the date range in the format: YYYY/MM
 
 The examples for setting these variables inside the docker compose fragment.
@@ -184,6 +186,22 @@ To process once for each year/month for the date range.
       - "END_YEAR_MONTH=2025-05"
    ...
 ```
+
+
+## Deploy
+
+To deploy this container, we provide an example in docker compose format in the [docker-compose.yaml](./docker-compose.yml) file.
+
+To run it, an example command is:
+
+```sh
+# to up the stack
+docker compose -f docker-compose.yaml up -d
+
+# and to stop
+docker compose -f docker-compose.yaml down
+```
+
 
 ## About code
 
