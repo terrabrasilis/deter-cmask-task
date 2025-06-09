@@ -23,6 +23,7 @@ import numpy as np
 from datetime import datetime
 import math
 import os
+import urllib
 from sqlalchemy import create_engine
 
 class ZonalCloud:
@@ -78,7 +79,8 @@ class ZonalCloud:
         # define connection with db based in biome
         self.con = psycopg2.connect(host=self.host, port=self.port, database=self.database, user=self.user, password=self.password)
         self.con.cursor().execute("SET application_name = 'ETL - DETER CMask Task';")
-        url = f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        password_updated = urllib.parse.quote_plus(self.password)
+        url = f"postgresql+psycopg2://{self.user}:{password_updated}@{self.host}:{self.port}/{self.database}"
         self.engine = create_engine(url=url)
 
     def __getPreviousMonthFromMetadata(self):
